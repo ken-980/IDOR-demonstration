@@ -36,5 +36,9 @@ documentRouter.get("/dashboard", (req, res) => {
     documentController.get_dashboard(req,res);
 });
 
+documentRouter.get("/download/:id", (req, res) => {
+  documentController.download_document(req,res);
+});
+
 
 export default documentRouter;

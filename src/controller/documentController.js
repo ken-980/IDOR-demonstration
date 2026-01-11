@@ -1,5 +1,7 @@
 import db from "./../config/db.js";
 import upload_helper from "./../services/upload_helper.js"
+import path from "path";
+import fs from "fs";
 
 const get_dashboard = async (req,res) => {
     try{
@@ -225,10 +227,47 @@ const list_document = async (req,res) => {
 };
 
 
+const download_document = async (req, res) => {
+  try {
+    const pool = db.getDB();
+    const userId = req.user;
+    const docId = req.params.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const result = await pool.query(
+      `SELECT filename, file_path
+       FROM vulnerable_dms.documents
+       WHERE id = $1 AND owner_id = $2`,
+      [docId, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    const { filename, file_path } = result.rows[0];
+
+    if (!fs.existsSync(file_path)) {
+      return res.status(404).json({ error: "File not found on server" });
+    }
+
+    res.download(file_path, filename);
+  } catch (error) {
+    console.error("Download error:", error);
+    res.status(500).json({ error: "Failed to download document" });
+  }
+};
+
+
+
 export default {
     get_dashboard,
     list_document,
     view_document,
     upload_document,
-    delete_document
+    delete_document,
+    download_document
 }
